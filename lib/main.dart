@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
+import 'dart:async';
+import 'package:mysql1/mysql1.dart';
 
 void main() => runApp(MyApp());
 const miPadding=10.0;
 final miFontSize=30.0;
+// creamos controller de los textfield para recuperar su valor
+final userController = TextEditingController();
+final pwdController = TextEditingController();
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appTitle = 'Validación de texto';
 
-
+// formulario de login
     return MaterialApp(
       title: appTitle,
       debugShowCheckedModeBanner: false,
@@ -36,6 +41,14 @@ class MyCustomFormState extends State<MyCustomForm> {
   // Crea una clave global que identificará de manera única el widget Form
   // y nos permita validar el formulario
   final _formKey = GlobalKey<FormState>();
+
+  // nos aseguramos de disposar los texteditingcontrollrs
+  @override
+  void dispose() {
+    userController.dispose();
+    pwdController.dispose();
+    super.dispose();
+  }
 
   @override Widget build(BuildContext context) {
     // Crea un widget Form usando el _formKey que creamos anteriormente
@@ -84,6 +97,7 @@ class MyCustomFormState extends State<MyCustomForm> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: miPadding,),
           child:TextFormField(
+            controller: userController,
             decoration: InputDecoration(
               labelText: 'Escriba su Usuario',
               fillColor: Colors.white,
@@ -140,6 +154,7 @@ class MyCustomFormState extends State<MyCustomForm> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: miPadding,),
             child:TextFormField(
+              controller: pwdController,
               decoration: InputDecoration(
                 labelText: 'Escriba su login',
                 fillColor: Colors.white,
@@ -166,6 +181,9 @@ class MyCustomFormState extends State<MyCustomForm> {
                 // Si el formulario es válido, queremos mostrar un Snackbar
                 Scaffold.of(context)
                     .showSnackBar(SnackBar(content: Text('Conectando a la base de datos...')));
+                // llama al login BD
+                login();
+
               } else {
                 Scaffold.of(context).showSnackBar(SnackBar(content: Text('Login incorrecto')));
               }
@@ -176,5 +194,25 @@ class MyCustomFormState extends State<MyCustomForm> {
       ],
       ),
     );
+  }
+
+  // conectar a BD
+  Future login() async {
+    // Open a connection
+    final conn = await MySqlConnection.connect(ConnectionSettings(
+        host: 'localhost', port: 3306, user: 'usuario_hibernate', db: '1234'));
+
+    // Query the database using a parameterized query
+    var results = await conn
+        .query('select nombre, password from usuarios where nombre = ? and password = ?;', [userController.text, pwdController.text]);
+    for (var row in results) {
+      print('Nombre: ${row[0]}, password: ${row[1]}');
+      if (row.length>0) {
+
+      }
+    }
+
+    // Finally, close the connection
+    await conn.close();
   }
 }
